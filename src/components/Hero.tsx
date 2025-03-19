@@ -62,7 +62,7 @@ const Hero = () => {
             className="mt-6 text-xl text-foreground/70 max-w-2xl mx-auto opacity-0"
             style={{ animationDelay: "0.5s" }}
           >
-            Describe your problem, upload photos, and get a list of pre-vetted providers with prices and reviews — delivered in minutes.
+            Describe your problem, upload photos, and get a list of local providers with prices and reviews — delivered in minutes.
           </p>
           
           <div 
