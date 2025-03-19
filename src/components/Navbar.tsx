@@ -37,9 +37,9 @@ const Navbar = () => {
           <a href="#how-it-works" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
             How it works
           </a>
-          <a href="#pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+          {/* <a href="#pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
             Pricing
-          </a>
+          </a> */}
           <a href="#get-access" className="inline-flex items-center justify-center h-9 px-4 py-2 text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 transition-colors">
             Get Early Access
           </a>
