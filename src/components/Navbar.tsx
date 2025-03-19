@@ -30,7 +30,7 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <a href="#" className="text-xl font-semibold tracking-tight">
-          <span className="text-primary">Home</span>Assist
+          <span className="text-primary">Fixly</span>
         </a>
         
         <nav className="hidden md:flex items-center space-x-8">
