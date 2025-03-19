@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +67,7 @@ const Pricing = () => {
             elements.forEach((el, index) => {
               setTimeout(() => {
                 el.classList.add("animate-fade-in");
+                el.classList.remove("opacity-0");
               }, 150 * index);
             });
           }

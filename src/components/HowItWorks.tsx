@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 const steps = [
@@ -36,6 +35,7 @@ const HowItWorks = () => {
             elements.forEach((el, index) => {
               setTimeout(() => {
                 el.classList.add("animate-fade-in");
+                el.classList.remove("opacity-0");
               }, 200 * index);
             });
           }

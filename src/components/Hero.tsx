@@ -9,18 +9,28 @@ const Hero = () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("animate-fade-in");
+            const elements = entry.target.querySelectorAll("[data-animate]");
+            elements?.forEach((el) => {
+              // Add the animation class but don't remove it
+              el.classList.add("animate-fade-in");
+              // Remove the opacity-0 class to ensure elements stay visible
+              el.classList.remove("opacity-0");
+            });
           }
         });
       },
       { threshold: 0.1 }
     );
 
-    const elements = containerRef.current?.querySelectorAll("[data-animate]");
-    elements?.forEach((el) => observer.observe(el));
+    // Observe the container instead of individual elements
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
 
     return () => {
-      elements?.forEach((el) => observer.unobserve(el));
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
     };
   }, []);
 
