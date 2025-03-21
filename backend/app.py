@@ -111,7 +111,7 @@ async def websocket_endpoint(websocket: WebSocket):
     # Generate a unique client_id
     client_id = str(id(websocket))
     
-    print(colored(f"New client connected: {client_id}", "green"))
+    logger.info(colored(f"New client connected: {client_id}", "green"))
     
     # Initialize connection data
     connections[client_id] = {
@@ -160,7 +160,7 @@ async def handle_message(client_id: str, data: str):
             print(colored(f"Twilio -> Starting Media Stream for {conn['stream_sid']}", "red"))
             await conn['tts_service'].generate({
                 'partial_response_index': None, 
-                'partial_response': "Welcome to Bart's Automotive. • How can I help you today?"
+                'partial_response': "Hi, I am an assistant for a client looking for help with their plumbing needs. Do you have a minute to talk?"
             }, 0)
         
         elif msg['event'] == 'media':

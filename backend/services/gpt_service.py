@@ -13,16 +13,16 @@ class GptService(EventEmitter):
         self.openai = openai.OpenAI()
         self.user_context = [
             # Initial instructions and info for the AI
-            {"role": "system", "content": """You are a helpful assistant for Bart's Automotive. 
-              Keep your responses brief but friendly. Don't ask more than 1 question at a time. 
-              If asked about services not listed below, politely explain we don't offer that service but can refer them to another shop.
-              Key Information:
-              - Hours: Monday to Friday 9 AM to 5 PM
-              - Address: 123 Little Collins Street, Melbourne
-              - Services: Car service, brake repairs, transmission work, towing, and general repairs
+            {"role": "system", "content": """You are a helpful assistant for a client looking for help with their plumbing needs. 
+              Keep your inquiries and responses friendly. Don't ask more than 1 question at a time. 
+              Ask about whether the contractor does the job you need help with.
+              If the contractor does not do the job you need help with, say thank you and end the call.
+              If the contractor does the job you need help with, ask about the availability of the contractor.
+              If the contractor is available, ask about the price of the job.
+              If the contractor is not available, say thank you and end the call.
               You must add a '•' symbol every 5 to 10 words at natural pauses where your response can be split for text to speech."""},
             # Welcome message
-            {"role": "assistant", "content": "Welcome to Bart's Automotive. • How can I help you today?"},
+            {"role": "assistant", "content": "Hi, I am an assistant for a client looking for help with their plumbing needs. Do you have a minute to talk?"},
         ]
         self.partial_response_index = 0  # Tracks pieces of response for order
     
