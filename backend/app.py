@@ -39,7 +39,7 @@ PORT = int(os.environ.get("PORT", 3000))
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://fixly-frontend.onrender.com", "http://localhost:8080"],
+    allow_origins=["https://fixly-frontend.onrender.com", "http://localhost:8080", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -107,40 +107,45 @@ async def incoming_call(request: Request):
 # Handle WebSocket connection for the call's audio
 @app.websocket("/connection")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    # Generate a unique client_id
-    client_id = str(id(websocket))
-    
-    logger.info(colored(f"New client connected: {client_id}", "green"))
-    
-    # Initialize connection data
-    connections[client_id] = {
-        'stream_sid': None,
-        'call_sid': None,
-        'gpt_service': GptService(),
-        'transcription_service': TranscriptionService(),
-        'tts_service': TextToSpeechService(),
-        'marks': [],              # Track audio completion markers
-        'interaction_count': 0,    # Count back-and-forth exchanges
-        'websocket': websocket     # Store reference to the websocket
-    }
-    
-    # Set up custom stream service for this client
-    stream_service = StreamService(websocket)
-    connections[client_id]['stream_service'] = stream_service
-    
-    # Set up event handlers for this client
-    await setup_client_handlers(client_id)
-    
+    logger.info("WebSocket connection attempt received")
     try:
-        # Process incoming WebSocket messages
-        while True:
-            data = await websocket.receive_text()
-            await handle_message(client_id, data)
-    except WebSocketDisconnect:
-        print(colored(f"Client disconnected: {client_id}", "red"))
-        if client_id in connections:
-            del connections[client_id]
+        await websocket.accept()
+        logger.info("WebSocket connection accepted successfully")
+        # Generate a unique client_id
+        client_id = str(id(websocket))
+        
+        logger.info(f"New client connected: {client_id}")
+    
+        # Initialize connection data
+        connections[client_id] = {
+            'stream_sid': None,
+            'call_sid': None,
+            'gpt_service': GptService(),
+            'transcription_service': TranscriptionService(),
+            'tts_service': TextToSpeechService(),
+            'marks': [],              # Track audio completion markers
+            'interaction_count': 0,    # Count back-and-forth exchanges
+            'websocket': websocket     # Store reference to the websocket
+        }
+        
+        # Set up custom stream service for this client
+        stream_service = StreamService(websocket)
+        connections[client_id]['stream_service'] = stream_service
+        
+        # Set up event handlers for this client
+        await setup_client_handlers(client_id)
+    
+        try:
+            # Process incoming WebSocket messages
+            while True:
+                data = await websocket.receive_text()
+                await handle_message(client_id, data)
+        except WebSocketDisconnect:
+            print(colored(f"Client disconnected: {client_id}", "red"))
+            if client_id in connections:
+                del connections[client_id]
+    except Exception as e:
+        logger.error(f"WebSocket connection error: {str(e)}")
 
 # Handle incoming WebSocket messages
 async def handle_message(client_id: str, data: str):
