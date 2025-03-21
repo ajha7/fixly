@@ -16,6 +16,7 @@ from services.gpt_service import GptService
 from services.stream_service import StreamService
 from services.transcription_service import TranscriptionService
 from services.tts_service import TextToSpeechService
+from logging_conf import configure_logging
 
 # Load environment variables
 load_dotenv()
@@ -27,6 +28,11 @@ app = FastAPI(
     description="Backend API for Fixly application with phone service capabilities",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+async def startup_event():
+    configure_logging()
+
 PORT = int(os.environ.get("PORT", 3000))
 
 # Add CORS middleware
