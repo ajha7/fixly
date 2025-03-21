@@ -12,7 +12,7 @@ from termcolor import colored
 from twilio.twiml.voice_response import VoiceResponse, Connect
 from twilio.request_validator import RequestValidator
 from services.gpt_service import GptService
-from services.stream_service_fastapi import StreamService
+from services.stream_service import StreamService
 from services.transcription_service import TranscriptionService
 from services.tts_service import TextToSpeechService
 
