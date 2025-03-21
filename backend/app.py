@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 import json
 import asyncio
+import logging
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, HTTPException, Depends, Header, status
@@ -19,6 +20,7 @@ from services.tts_service import TextToSpeechService
 # Load environment variables
 load_dotenv()
 
+logger = logging.getLogger("uvicorn.error")
 # Set up FastAPI
 app = FastAPI(
     title="Fixly API",
@@ -83,16 +85,16 @@ async def validate_twilio_request(request: Request, x_twilio_signature: Optional
 # Handle incoming calls from Twilio
 @app.post("/phone/incoming")
 async def incoming_call(request: Request, _: bool = Depends(validate_twilio_request)):
-    print("Twilio -> Incoming call")
+    logger.info("Twilio -> Incoming call")
     try:
         response = VoiceResponse()
         connect = Connect()
-        # Tell Twilio where to connect the call's media stream
         connect.stream(url=f"wss://{os.environ.get('SERVER')}/connection")
         response.append(connect)
+        logger.info("Response constructed successfully")
         return Response(content=str(response), media_type="text/xml")
     except Exception as err:
-        print(err)
+        logger.error(f"Error processing call: {err}")
         return Response(content="Error processing call", status_code=500)
 
 # Handle WebSocket connection for the call's audio
