@@ -1,0 +1,50 @@
+services:
+  # Backend API service
+  - type: web
+    name: fixly-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: SERVER
+        fromService:
+          name: fixly-api
+          type: web
+          property: host
+      - key: VOICE_MODEL
+        value: aura-asteria-en
+    autoDeploy: true
+
+  # Frontend service
+  - type: web
+    name: fixly-frontend
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm run preview -- --port $PORT --host 0.0.0.0
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: VITE_API_URL
+        fromService:
+          name: fixly-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_WS_URL
+        fromService:
+          name: fixly-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+          format: wss://${value}
+    autoDeploy: true

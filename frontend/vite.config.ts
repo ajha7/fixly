@@ -11,13 +11,13 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     proxy: {
       // Proxy API requests to the backend server
       '/api': {
-        target: 'http://localhost:3000',
+        target: import.meta.env.VITE_API_URL || 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/api/, '')
       },
       // Proxy WebSocket connections
       '/connection': {
-        target: 'ws://localhost:3000',
+        target: import.meta.env.VITE_WS_URL || 'ws://localhost:3000',
         ws: true
       }
     }

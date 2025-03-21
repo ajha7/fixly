@@ -3,6 +3,11 @@
 // Add type definitions for import.meta
 interface ImportMeta {
   url: string;
+  env: {
+    VITE_API_URL?: string;
+    VITE_WS_URL?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 // Add module declarations for untyped modules
