@@ -83,6 +83,7 @@ async def validate_twilio_request(request: Request, x_twilio_signature: Optional
 # Handle incoming calls from Twilio
 @app.post("/phone/incoming")
 async def incoming_call(request: Request, _: bool = Depends(validate_twilio_request)):
+    print("Twilio -> Incoming call")
     try:
         response = VoiceResponse()
         connect = Connect()
