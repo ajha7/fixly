@@ -22,6 +22,7 @@ from logging_conf import configure_logging
 load_dotenv()
 
 logger = logging.getLogger("uvicorn.error")
+
 # Set up FastAPI
 app = FastAPI(
     title="Fixly API",
@@ -90,7 +91,7 @@ async def validate_twilio_request(request: Request, x_twilio_signature: Optional
 
 # Handle incoming calls from Twilio
 @app.post("/phone/incoming")
-async def incoming_call(request: Request, _: bool = Depends(validate_twilio_request)):
+async def incoming_call(request: Request):
     logger.info("Twilio -> Incoming call")
     try:
         response = VoiceResponse()
