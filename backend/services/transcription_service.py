@@ -15,11 +15,11 @@ logger = logging.getLogger("uvicorn.error")
 class TranscriptionService(EventEmitter):
     """Handles real-time speech-to-text using Deepgram"""
     
-    def __init__(self):
+    async def __init__(self):
         """Initialize the transcription service"""
         super().__init__()
         # Set up connection to Deepgram with API key
-        self.deepgram = DeepgramClient(os.environ.get("DEEPGRAM_API_KEY"))
+        self.deepgram: DeepgramClient = DeepgramClient(os.environ.get("DEEPGRAM_API_KEY"))
         
         # Configure live transcription settings
         options = LiveOptions(
@@ -33,7 +33,7 @@ class TranscriptionService(EventEmitter):
         )
         
         # Connect to Deepgram streaming API
-        self.dg_connection = self.deepgram.listen.websocket.v("1")
+        self.dg_connection = await self.deepgram.listen.live.v("1")
         self.dg_connection.start(options)
         
         self.final_result = ""       # Store complete transcription
