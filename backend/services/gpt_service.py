@@ -44,7 +44,7 @@ class GptService(EventEmitter):
         self.update_user_context(name, role, text)
         
         # Get streaming response from GPT
-        stream = await self.openai.chat.completions.create(
+        stream = self.openai.chat.completions.create(
             model='gpt-4o-mini',
             messages=self.user_context,
             stream=True,
@@ -55,7 +55,7 @@ class GptService(EventEmitter):
         partial_response = ''
         
         # Process each piece of GPT's response as it comes
-        async for chunk in stream:
+        for chunk in stream:
             content = chunk.choices[0].delta.content or ''
             finish_reason = chunk.choices[0].finish_reason
             
