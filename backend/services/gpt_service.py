@@ -1,4 +1,5 @@
 import openai
+import os
 from termcolor import colored
 import asyncio
 from typing import List, Dict, Any, Optional
