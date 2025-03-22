@@ -128,7 +128,6 @@ async def incoming_call(request: Request):
 # Handle WebSocket connection for the call's audio
 @app.websocket("/connection")
 async def websocket_endpoint(websocket: WebSocket):
-    logger.info("WebSocket connection attempt received")
     try:
         await websocket.accept()
         logger.info("WebSocket connection accepted successfully")
@@ -136,6 +135,8 @@ async def websocket_endpoint(websocket: WebSocket):
         client_id = str(id(websocket))
         
         logger.info(f"New client connected: {client_id}")
+
+        logging.info("any potential issue")
         gpt = GptService()
         logging.info("not gpt issue")
         deepgram = TranscriptionService()
