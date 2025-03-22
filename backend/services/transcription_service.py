@@ -22,7 +22,7 @@ class TranscriptionService(EventEmitter):
         self.deepgram: DeepgramClient = DeepgramClient(os.environ.get("DEEPGRAM_API_KEY"))
         
         # Configure live transcription settings
-        self.options = LiveOptions(
+        options = LiveOptions(
             encoding="mulaw",         # Audio encoding type
             sample_rate=8000,         # Phone call quality
             model="nova-2",           # Deepgram model to use
@@ -32,22 +32,12 @@ class TranscriptionService(EventEmitter):
             utterance_end_ms=1000     # Wait time for utterance end
         )
         
-        self.dg_connection = None
+        # Connect to Deepgram streaming API
+        self.dg_connection = self.deepgram.listen.live.v("1")
+        self.dg_connection.start(options)
+        
         self.final_result = ""       # Store complete transcription
         self.speech_final = False    # Track if speaker has finished naturally
-    
-    @classmethod
-    async def create(cls):
-        """Asynchronous factory method to create and initialize a TranscriptionService instance"""
-        instance = cls()
-        await instance.initialize()
-        return instance
-    
-    async def initialize(self):
-        """Asynchronously initialize the connection to Deepgram"""
-        # Connect to Deepgram streaming API
-        self.dg_connection = await self.deepgram.listen.live.v("1")
-        self.dg_connection.start(self.options)
         
         # Define event handler functions
         def on_open():

@@ -136,15 +136,12 @@ async def websocket_endpoint(websocket: WebSocket):
         
         logger.info(f"New client connected: {client_id}")
 
-        # Initialize transcription service asynchronously
-        transcription_service = await TranscriptionService.create()
-        
         # Initialize connection data
         connections[client_id] = {
             'stream_sid': None,
             'call_sid': None,
             'gpt_service': GptService(),
-            'transcription_service': transcription_service,
+            'transcription_service': TranscriptionService(),
             'tts_service': TextToSpeechService(),
             'marks': [],              # Track audio completion markers
             'interaction_count': 0,    # Count back-and-forth exchanges
