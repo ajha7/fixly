@@ -16,7 +16,7 @@ class TranscriptionService(EventEmitter):
         """Initialize the transcription service"""
         super().__init__()
         # Set up connection to Deepgram with API key
-        self.deepgram = DeepgramClient(os.environ.get("DEEPGRAM_API_KEY"))
+        self.deepgram = DeepgramClient(os.environ.get("DEEPGRAM_API_KEY"), options={"api_key": os.environ.get("DEEPGRAM_API_KEY")})
         
         # Configure live transcription settings
         options = LiveOptions(

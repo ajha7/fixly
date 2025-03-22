@@ -10,7 +10,7 @@ class GptService(EventEmitter):
     def __init__(self):
         """Initialize the GPT service with conversation context"""
         super().__init__()
-        self.openai = openai.OpenAI()
+        self.openai = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         self.user_context = [
             # Initial instructions and info for the AI
             {"role": "system", "content": """You are a helpful assistant for a client looking for help with their plumbing needs. 
