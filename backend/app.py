@@ -137,7 +137,7 @@ async def websocket_endpoint(websocket: WebSocket):
         
         # Set up event handlers for this client
         await setup_client_handlers(client_id)
-    
+        logging.info("REACHED HERE")
         try:
             # Process incoming WebSocket messages
             while True:
