@@ -82,6 +82,8 @@ class TranscriptionService(EventEmitter):
         def on_close():
             logger.info(colored("STT -> Deepgram connection closed", "yellow"))
         
+        # Connect to Deepgram streaming API
+        self.dg_connection = self.deepgram.listen.live.v("1")
         # Register event handlers with the Deepgram connection
         self.dg_connection.on(LiveTranscriptionEvents.Open, on_open)
         self.dg_connection.on(LiveTranscriptionEvents.Transcript, on_transcript)
@@ -90,8 +92,7 @@ class TranscriptionService(EventEmitter):
         self.dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
         self.dg_connection.on(LiveTranscriptionEvents.Close, on_close)
 
-        # Connect to Deepgram streaming API
-        self.dg_connection = self.deepgram.listen.live.v("1")
+        # Start the connection
         self.dg_connection.start(options)
     
     def send(self, payload):
