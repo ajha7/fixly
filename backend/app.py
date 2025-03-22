@@ -81,7 +81,7 @@ async def validate_twilio_request(request: Request, x_twilio_signature: Optional
     request_valid = validator.validate(url, form_data, x_twilio_signature)
     
     if not request_valid:
-        print(colored("Invalid Twilio signature - rejecting request", "red"))
+        logging.info(colored("Invalid Twilio signature - rejecting request", "red"))
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid Twilio signature"
@@ -96,8 +96,11 @@ async def incoming_call(request: Request):
     try:
         response = VoiceResponse()
         connect = Connect()
-        connect.stream(url=f"wss://{os.environ.get('SERVER')}/connection")
+        url=f"wss://{os.environ.get('SERVER')}/connection"  
+        connect.stream(url=url)
+        logger.info(f"Twilio -> Constructing response with URL: {url}")
         response.append(connect)
+        logger.info(response)
         logger.info("Response constructed successfully")
         return Response(content=str(response), media_type="text/xml")
     except Exception as err:
@@ -141,7 +144,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 data = await websocket.receive_text()
                 await handle_message(client_id, data)
         except WebSocketDisconnect:
-            print(colored(f"Client disconnected: {client_id}", "red"))
+            logging.info(colored(f"Client disconnected: {client_id}", "red"))
             if client_id in connections:
                 del connections[client_id]
     except Exception as e:
@@ -162,7 +165,7 @@ async def handle_message(client_id: str, data: str):
             conn['call_sid'] = msg['start']['callSid']
             conn['stream_service'].set_stream_sid(conn['stream_sid'])
             conn['gpt_service'].set_call_sid(conn['call_sid'])
-            print(colored(f"Twilio -> Starting Media Stream for {conn['stream_sid']}", "red"))
+            logging.info(colored(f"Twilio -> Starting Media Stream for {conn['stream_sid']}", "red"))
             await conn['tts_service'].generate({
                 'partial_response_index': None, 
                 'partial_response': "Hi, I am an assistant for a client looking for help with their plumbing needs. Do you have a minute to talk?"
@@ -175,15 +178,15 @@ async def handle_message(client_id: str, data: str):
         elif msg['event'] == 'mark':
             # Audio piece finished playing
             label = msg['mark']['name']
-            print(colored(f"Twilio -> Audio completed mark ({msg.get('sequenceNumber', 'N/A')}): {label}", "red"))
+            logging.info(colored(f"Twilio -> Audio completed mark ({msg.get('sequenceNumber', 'N/A')}): {label}", "red"))
             conn['marks'] = [m for m in conn['marks'] if m != msg['mark']['name']]
         
         elif msg['event'] == 'stop':
             # Call ended
-            print(colored(f"Twilio -> Media stream {conn['stream_sid']} ended.", "red"))
+            logging.info(colored(f"Twilio -> Media stream {conn['stream_sid']} ended.", "red"))
     
     except Exception as err:
-        print(colored(f"Error in handle_message: {err}", "red"))
+        logging.info(colored(f"Error in handle_message: {err}", "red"))
 
 # Set up event handlers for each client
 async def setup_client_handlers(client_id: str):
@@ -193,7 +196,7 @@ async def setup_client_handlers(client_id: str):
     @conn['transcription_service'].on('utterance')
     async def handle_utterance(text):
         if conn['marks'] and text and len(text) > 5:
-            print(colored('Twilio -> Interruption, Clearing stream', "red"))
+            logging.info(colored('Twilio -> Interruption, Clearing stream', "red"))
             await conn['websocket'].send_text(json.dumps({
                 'streamSid': conn['stream_sid'],
                 'event': 'clear',
@@ -204,20 +207,20 @@ async def setup_client_handlers(client_id: str):
     async def handle_transcription(text):
         if not text:
             return
-        print(colored(f"Interaction {conn['interaction_count']} – STT -> GPT: {text}", "yellow"))
+        logging.info(colored(f"Interaction {conn['interaction_count']} – STT -> GPT: {text}", "yellow"))
         await conn['gpt_service'].completion(text, conn['interaction_count'])
         conn['interaction_count'] += 1
     
     # Send GPT's response to text-to-speech
     @conn['gpt_service'].on('gptreply')
     async def handle_gpt_reply(gpt_reply, icount):
-        print(colored(f"Interaction {icount}: GPT -> TTS: {gpt_reply.get('partial_response')}", "green"))
+        logging.info(colored(f"Interaction {icount}: GPT -> TTS: {gpt_reply.get('partial_response')}", "green"))
         await conn['tts_service'].generate(gpt_reply, icount)
     
     # Send converted speech to caller
     @conn['tts_service'].on('speech')
     def handle_speech(response_index, audio, label, icount):
-        print(colored(f"Interaction {icount}: TTS -> TWILIO: {label}", "blue"))
+        logging.info(colored(f"Interaction {icount}: TTS -> TWILIO: {label}", "blue"))
         conn['stream_service'].buffer(response_index, audio)
     
     # Track when audio pieces are sent
@@ -237,5 +240,5 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    print(f"Server running on port {PORT}")
+    logging.info(f"Server running on port {PORT}")
     uvicorn.run("app:app", host="0.0.0.0", port=PORT, reload=True)
