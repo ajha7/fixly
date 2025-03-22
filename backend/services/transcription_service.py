@@ -39,13 +39,25 @@ class TranscriptionService(EventEmitter):
         def on_open():
             logger.info(colored("STT -> Deepgram connection established", "yellow"))
         
-        def on_transcript(result=None, **kwargs):
+        def on_transcript(self_or_result, result=None, **kwargs):
+            # Deepgram passes the client as first arg and result as second arg or keyword
+            # Handle both cases by checking the type
+            from deepgram.clients.live.v1.client import LiveClient
+            
+            if isinstance(self_or_result, LiveClient):
+                # First argument is the client, use the result keyword arg
+                transcript_result = result
+            else:
+                # First argument is the result itself
+                transcript_result = self_or_result
+                
+            logger.info(colored(f"STT -> Transcript received: {transcript_result}", "yellow"))
             text = ""
-            if result and result.channel and result.channel.alternatives:
-                text = result.channel.alternatives[0].transcript
+            if transcript_result and hasattr(transcript_result, 'channel') and transcript_result.channel and transcript_result.channel.alternatives:
+                text = transcript_result.channel.alternatives[0].transcript
             
             # Handle end of utterance (speaker stopped talking)
-            if result and result.type == "UtteranceEnd":
+            if transcript_result and hasattr(transcript_result, 'type') and transcript_result.type == "UtteranceEnd":
                 if not self.speech_final:
                     logger.info(colored(f"UtteranceEnd received before speechFinal, emit the text collected so far: {self.final_result}", "yellow"))
                     self.emit("transcription", self.final_result)
@@ -55,11 +67,11 @@ class TranscriptionService(EventEmitter):
                     return
             
             # Handle final transcription pieces
-            if result and result.is_final and text.strip():
+            if transcript_result and hasattr(transcript_result, 'is_final') and transcript_result.is_final and text.strip():
                 self.final_result += f" {text}"
                 
                 # If speaker made a natural pause, send the transcription
-                if result.speech_final:
+                if hasattr(transcript_result, 'speech_final') and transcript_result.speech_final:
                     self.speech_final = True  # Prevent duplicate sends
                     self.emit("transcription", self.final_result)
                     self.final_result = ""
