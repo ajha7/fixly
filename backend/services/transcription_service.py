@@ -39,13 +39,13 @@ class TranscriptionService(EventEmitter):
         def on_open():
             logger.info(colored("STT -> Deepgram connection established", "yellow"))
         
-        def on_transcript(transcript):
+        def on_transcript(result=None, **kwargs):
             text = ""
-            if transcript.channel and transcript.channel.alternatives:
-                text = transcript.channel.alternatives[0].transcript
+            if result and result.channel and result.channel.alternatives:
+                text = result.channel.alternatives[0].transcript
             
             # Handle end of utterance (speaker stopped talking)
-            if transcript.type == "UtteranceEnd":
+            if result and result.type == "UtteranceEnd":
                 if not self.speech_final:
                     logger.info(colored(f"UtteranceEnd received before speechFinal, emit the text collected so far: {self.final_result}", "yellow"))
                     self.emit("transcription", self.final_result)
@@ -55,11 +55,11 @@ class TranscriptionService(EventEmitter):
                     return
             
             # Handle final transcription pieces
-            if transcript.is_final and text.strip():
+            if result and result.is_final and text.strip():
                 self.final_result += f" {text}"
                 
                 # If speaker made a natural pause, send the transcription
-                if transcript.speech_final:
+                if result.speech_final:
                     self.speech_final = True  # Prevent duplicate sends
                     self.emit("transcription", self.final_result)
                     self.final_result = ""

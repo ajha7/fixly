@@ -1,6 +1,7 @@
 class EventEmitter:
     """
     Simple implementation of an event emitter pattern similar to Node.js EventEmitter
+    with support for async listeners
     """
     
     def __init__(self):
@@ -17,4 +18,17 @@ class EventEmitter:
         """Emit an event with arguments to all registered listeners"""
         if event_name in self._events:
             for listener in self._events[event_name]:
-                listener(*args)
+                # Check if the listener is a coroutine function
+                import inspect
+                if inspect.iscoroutinefunction(listener):
+                    # Create a task to run the coroutine, but don't wait for it
+                    import asyncio
+                    try:
+                        asyncio.create_task(listener(*args))
+                    except RuntimeError:
+                        # If we're not in an event loop, just call the function without awaiting
+                        # This is not ideal but prevents errors when called outside an async context
+                        asyncio.run(listener(*args))
+                else:
+                    # Regular function, just call it
+                    listener(*args)
