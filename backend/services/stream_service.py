@@ -20,15 +20,15 @@ class StreamService(EventEmitter):
         """Set the stream session ID"""
         self.stream_sid = stream_sid
     
-    def buffer(self, index, audio):
+    async def buffer(self, index, audio):
         """Manages the order of audio playback"""
         try:
             # Welcome message has no index, play immediately
             if index is None:
-                self.send_audio(audio)
+                await self.send_audio(audio)
             # If this is the next expected piece, play it and check for more
             elif index == self.expected_audio_index:
-                self.send_audio(audio)
+                await self.send_audio(audio)
                 self.expected_audio_index += 1
                 
                 # Play any stored pieces that are now ready in sequence

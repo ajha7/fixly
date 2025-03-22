@@ -96,6 +96,14 @@ class TranscriptionService(EventEmitter):
     
     def send(self, payload):
         """Send audio data to Deepgram for transcription"""
-        if self.dg_connection.is_ready():  # Check if connection is open
-            audio_data = base64.b64decode(payload)
-            self.dg_connection.send(audio_data)
+        try:
+            # Check if connection exists
+            if hasattr(self, 'dg_connection'):
+                # Decode the base64 audio data
+                audio_data = base64.b64decode(payload)
+                # Send the audio data to Deepgram
+                self.dg_connection.send(audio_data)
+            else:
+                logger.warning("Cannot send audio: Deepgram connection not initialized")
+        except Exception as e:
+            logger.error(f"Error in TranscriptionService.send: {str(e)}")
