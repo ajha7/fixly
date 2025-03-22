@@ -81,7 +81,7 @@ async def validate_twilio_request(request: Request, x_twilio_signature: Optional
     request_valid = validator.validate(url, form_data, x_twilio_signature)
     
     if not request_valid:
-        logging.info(colored("Invalid Twilio signature - rejecting request", "red"))
+        logger.info(colored("Invalid Twilio signature - rejecting request", "red"))
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid Twilio signature"
@@ -136,13 +136,13 @@ async def websocket_endpoint(websocket: WebSocket):
         
         logger.info(f"New client connected: {client_id}")
 
-        logging.info("any potential issue")
+        logger.info("any potential issue")
         gpt = GptService()
-        logging.info("not gpt issue")
+        logger.info("not gpt issue")
         deepgram = TranscriptionService()
-        logging.info("not deepgram issue")
+        logger.info("not deepgram issue")
         tts = TextToSpeechService()
-        logging.info("not texttospeech issue")
+        logger.info("not texttospeech issue")
         # Initialize connection data
         connections[client_id] = {
             'stream_sid': None,
@@ -154,21 +154,21 @@ async def websocket_endpoint(websocket: WebSocket):
             'interaction_count': 0,    # Count back-and-forth exchanges
             'websocket': websocket     # Store reference to the websocket
         }
-        logging.info("REACHED HERE1")
+        logger.info("REACHED HERE1")
         # Set up custom stream service for this client
         stream_service = StreamService(websocket)
         connections[client_id]['stream_service'] = stream_service
-        logging.info("REACHED HERE2")
+        logger.info("REACHED HERE2")
         # Set up event handlers for this client
         await setup_client_handlers(client_id)
-        logging.info("REACHED HERE3")
+        logger.info("REACHED HERE3")
         try:
             # Process incoming WebSocket messages
             while True:
                 data = await websocket.receive_text()
                 await handle_message(client_id, data)
         except WebSocketDisconnect:
-            logging.info(colored(f"Client disconnected: {client_id}", "red"))
+            logger.info(colored(f"Client disconnected: {client_id}", "red"))
             if client_id in connections:
                 del connections[client_id]
     except Exception as e:
@@ -189,7 +189,7 @@ async def handle_message(client_id: str, data: str):
             conn['call_sid'] = msg['start']['callSid']
             conn['stream_service'].set_stream_sid(conn['stream_sid'])
             conn['gpt_service'].set_call_sid(conn['call_sid'])
-            logging.info(colored(f"Twilio -> Starting Media Stream for {conn['stream_sid']}", "red"))
+            logger.info(colored(f"Twilio -> Starting Media Stream for {conn['stream_sid']}", "red"))
             await conn['tts_service'].generate({
                 'partial_response_index': None, 
                 'partial_response': "Hi, I am an assistant for a client looking for help with their plumbing needs. Do you have a minute to talk?"
@@ -202,15 +202,15 @@ async def handle_message(client_id: str, data: str):
         elif msg['event'] == 'mark':
             # Audio piece finished playing
             label = msg['mark']['name']
-            logging.info(colored(f"Twilio -> Audio completed mark ({msg.get('sequenceNumber', 'N/A')}): {label}", "red"))
+            logger.info(colored(f"Twilio -> Audio completed mark ({msg.get('sequenceNumber', 'N/A')}): {label}", "red"))
             conn['marks'] = [m for m in conn['marks'] if m != msg['mark']['name']]
         
         elif msg['event'] == 'stop':
             # Call ended
-            logging.info(colored(f"Twilio -> Media stream {conn['stream_sid']} ended.", "red"))
+            logger.info(colored(f"Twilio -> Media stream {conn['stream_sid']} ended.", "red"))
     
     except Exception as err:
-        logging.info(colored(f"Error in handle_message: {err}", "red"))
+        logger.info(colored(f"Error in handle_message: {err}", "red"))
 
 # Set up event handlers for each client
 async def setup_client_handlers(client_id: str):
@@ -220,7 +220,7 @@ async def setup_client_handlers(client_id: str):
     @conn['transcription_service'].on('utterance')
     async def handle_utterance(text):
         if conn['marks'] and text and len(text) > 5:
-            logging.info(colored('Twilio -> Interruption, Clearing stream', "red"))
+            logger.info(colored('Twilio -> Interruption, Clearing stream', "red"))
             await conn['websocket'].send_text(json.dumps({
                 'streamSid': conn['stream_sid'],
                 'event': 'clear',
@@ -231,20 +231,20 @@ async def setup_client_handlers(client_id: str):
     async def handle_transcription(text):
         if not text:
             return
-        logging.info(colored(f"Interaction {conn['interaction_count']} – STT -> GPT: {text}", "yellow"))
+        logger.info(colored(f"Interaction {conn['interaction_count']} – STT -> GPT: {text}", "yellow"))
         await conn['gpt_service'].completion(text, conn['interaction_count'])
         conn['interaction_count'] += 1
     
     # Send GPT's response to text-to-speech
     @conn['gpt_service'].on('gptreply')
     async def handle_gpt_reply(gpt_reply, icount):
-        logging.info(colored(f"Interaction {icount}: GPT -> TTS: {gpt_reply.get('partial_response')}", "green"))
+        logger.info(colored(f"Interaction {icount}: GPT -> TTS: {gpt_reply.get('partial_response')}", "green"))
         await conn['tts_service'].generate(gpt_reply, icount)
     
     # Send converted speech to caller
     @conn['tts_service'].on('speech')
     def handle_speech(response_index, audio, label, icount):
-        logging.info(colored(f"Interaction {icount}: TTS -> TWILIO: {label}", "blue"))
+        logger.info(colored(f"Interaction {icount}: TTS -> TWILIO: {label}", "blue"))
         conn['stream_service'].buffer(response_index, audio)
     
     # Track when audio pieces are sent
@@ -264,5 +264,5 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    logging.info(f"Server running on port {PORT}")
+    logger.info(f"Server running on port {PORT}")
     uvicorn.run("app:app", host="0.0.0.0", port=PORT, reload=True)

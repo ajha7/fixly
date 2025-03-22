@@ -8,6 +8,9 @@ from deepgram import (
     Microphone,
 )
 from events import EventEmitter
+import logging
+
+logger = logging.getLogger("uvicorn.error")
 
 class TranscriptionService(EventEmitter):
     """Handles real-time speech-to-text using Deepgram"""
@@ -36,13 +39,10 @@ class TranscriptionService(EventEmitter):
         self.final_result = ""       # Store complete transcription
         self.speech_final = False    # Track if speaker has finished naturally
         
-        # When connection opens, set up all event handlers
-        @self.dg_connection.on(LiveTranscriptionEvents.Open)
+        # Define event handler functions
         def on_open():
-            print(colored("STT -> Deepgram connection established", "yellow"))
+            logger.info(colored("STT -> Deepgram connection established", "yellow"))
         
-        # Handle incoming transcription chunks
-        @self.dg_connection.on(LiveTranscriptionEvents.Transcript)
         def on_transcript(transcript):
             text = ""
             if transcript.channel and transcript.channel.alternatives:
@@ -51,11 +51,11 @@ class TranscriptionService(EventEmitter):
             # Handle end of utterance (speaker stopped talking)
             if transcript.type == "UtteranceEnd":
                 if not self.speech_final:
-                    print(colored(f"UtteranceEnd received before speechFinal, emit the text collected so far: {self.final_result}", "yellow"))
+                    logger.info(colored(f"UtteranceEnd received before speechFinal, emit the text collected so far: {self.final_result}", "yellow"))
                     self.emit("transcription", self.final_result)
                     return
                 else:
-                    print(colored("STT -> Speech was already final when UtteranceEnd received", "yellow"))
+                    logger.info(colored("STT -> Speech was already final when UtteranceEnd received", "yellow"))
                     return
             
             # Handle final transcription pieces
@@ -74,25 +74,25 @@ class TranscriptionService(EventEmitter):
                 # Emit interim results for real-time feedback
                 self.emit("utterance", text)
         
-        # Error handling events
-        @self.dg_connection.on(LiveTranscriptionEvents.Error)
         def on_error(error):
-            print(colored("STT -> deepgram error", "red"))
-            print(error)
+            logger.error(f"STT -> Deepgram error: {error}")
         
-        @self.dg_connection.on(LiveTranscriptionEvents.Warning)
         def on_warning(warning):
-            print(colored("STT -> deepgram warning", "red"))
-            print(warning)
+            logger.warning(f"STT -> Deepgram warning: {warning}")
         
-        @self.dg_connection.on(LiveTranscriptionEvents.Metadata)
         def on_metadata(metadata):
-            print(colored("STT -> deepgram metadata", "yellow"))
-            print(metadata)
+            logger.info(f"STT -> Deepgram metadata: {metadata}")
         
-        @self.dg_connection.on(LiveTranscriptionEvents.Close)
         def on_close():
-            print(colored("STT -> Deepgram connection closed", "yellow"))
+            logger.info(colored("STT -> Deepgram connection closed", "yellow"))
+        
+        # Register event handlers with the Deepgram connection
+        self.dg_connection.on(LiveTranscriptionEvents.Open, on_open)
+        self.dg_connection.on(LiveTranscriptionEvents.Transcript, on_transcript)
+        self.dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+        self.dg_connection.on(LiveTranscriptionEvents.Warning, on_warning)
+        self.dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
+        self.dg_connection.on(LiveTranscriptionEvents.Close, on_close)
     
     def send(self, payload):
         """Send audio data to Deepgram for transcription"""
