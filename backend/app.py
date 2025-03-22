@@ -136,13 +136,6 @@ async def websocket_endpoint(websocket: WebSocket):
         
         logger.info(f"New client connected: {client_id}")
 
-        logger.info("any potential issue")
-        gpt = GptService()
-        logger.info("not gpt issue")
-        deepgram = TranscriptionService()
-        logger.info("not deepgram issue")
-        tts = TextToSpeechService()
-        logger.info("not texttospeech issue")
         # Initialize connection data
         connections[client_id] = {
             'stream_sid': None,
@@ -154,11 +147,9 @@ async def websocket_endpoint(websocket: WebSocket):
             'interaction_count': 0,    # Count back-and-forth exchanges
             'websocket': websocket     # Store reference to the websocket
         }
-        logger.info("REACHED HERE1")
         # Set up custom stream service for this client
         stream_service = StreamService(websocket)
         connections[client_id]['stream_service'] = stream_service
-        logger.info("REACHED HERE2")
         # Set up event handlers for this client
         await setup_client_handlers(client_id)
         logger.info("REACHED HERE3")
@@ -216,8 +207,8 @@ async def handle_message(client_id: str, data: str):
 async def setup_client_handlers(client_id: str):
     conn = connections[client_id]
     
+    # Define handler functions
     # Handle interruptions (caller speaking while assistant is)
-    @conn['transcription_service'].on('utterance')
     async def handle_utterance(text):
         if conn['marks'] and text and len(text) > 5:
             logger.info(colored('Twilio -> Interruption, Clearing stream', "red"))
@@ -227,7 +218,6 @@ async def setup_client_handlers(client_id: str):
             }))
     
     # Process transcribed text through GPT
-    @conn['transcription_service'].on('transcription')
     async def handle_transcription(text):
         if not text:
             return
@@ -236,21 +226,25 @@ async def setup_client_handlers(client_id: str):
         conn['interaction_count'] += 1
     
     # Send GPT's response to text-to-speech
-    @conn['gpt_service'].on('gptreply')
     async def handle_gpt_reply(gpt_reply, icount):
         logger.info(colored(f"Interaction {icount}: GPT -> TTS: {gpt_reply.get('partial_response')}", "green"))
         await conn['tts_service'].generate(gpt_reply, icount)
     
     # Send converted speech to caller
-    @conn['tts_service'].on('speech')
     def handle_speech(response_index, audio, label, icount):
         logger.info(colored(f"Interaction {icount}: TTS -> TWILIO: {label}", "blue"))
         conn['stream_service'].buffer(response_index, audio)
     
     # Track when audio pieces are sent
-    @conn['stream_service'].on('audiosent')
     def handle_audio_sent(mark_label):
         conn['marks'].append(mark_label)
+    
+    # Register all event handlers
+    conn['transcription_service'].on('utterance', handle_utterance)
+    conn['transcription_service'].on('transcription', handle_transcription)
+    conn['gpt_service'].on('gptreply', handle_gpt_reply)
+    conn['tts_service'].on('speech', handle_speech)
+    conn['stream_service'].on('audiosent', handle_audio_sent)
 
 # API health check endpoint
 @app.get("/health")
