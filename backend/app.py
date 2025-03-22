@@ -92,16 +92,34 @@ async def validate_twilio_request(request: Request, x_twilio_signature: Optional
 # Handle incoming calls from Twilio
 @app.post("/phone/incoming")
 async def incoming_call(request: Request):
-    logger.info("Twilio -> Incoming call")
+    logger.info("Twilio -> Incoming call received")
     try:
+        # Get the server domain from environment variable
+        server_domain = os.environ.get('SERVER')
+        if not server_domain:
+            logger.error("SERVER environment variable not set")
+            return Response(content="Server configuration error", status_code=500)
+            
+        # Create TwiML response
         response = VoiceResponse()
+        
+        # Add a Say verb to keep the call active initially
+        response.say("Connecting you to our service...", voice="alice")
+        
+        # Set up the stream connection
         connect = Connect()
-        url=f"wss://{os.environ.get('SERVER')}/connection"  
-        connect.stream(url=url)
-        logger.info(f"Twilio -> Constructing response with URL: {url}")
+        stream_url = f"wss://{server_domain}/connection"
+        logger.info(f"Twilio -> Setting up stream connection to: {stream_url}")
+        
+        # Configure the stream with necessary parameters
+        connect.stream(url=stream_url, track="inbound_track")
+        
+        # Add the connect verb to the response
         response.append(connect)
-        logger.info(response)
-        logger.info("Response constructed successfully")
+        
+        # Log the complete TwiML response for debugging
+        logger.info(f"Twilio -> Complete TwiML response: {str(response)}")
+        
         return Response(content=str(response), media_type="text/xml")
     except Exception as err:
         logger.error(f"Error processing call: {err}")
