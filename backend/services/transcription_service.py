@@ -32,10 +32,6 @@ class TranscriptionService(EventEmitter):
             utterance_end_ms=1000     # Wait time for utterance end
         )
         
-        # Connect to Deepgram streaming API
-        self.dg_connection = self.deepgram.listen.live.v("1")
-        self.dg_connection.start(options)
-        
         self.final_result = ""       # Store complete transcription
         self.speech_final = False    # Track if speaker has finished naturally
         
@@ -93,6 +89,10 @@ class TranscriptionService(EventEmitter):
         self.dg_connection.on(LiveTranscriptionEvents.Warning, on_warning)
         self.dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
         self.dg_connection.on(LiveTranscriptionEvents.Close, on_close)
+
+        # Connect to Deepgram streaming API
+        self.dg_connection = self.deepgram.listen.live.v("1")
+        self.dg_connection.start(options)
     
     def send(self, payload):
         """Send audio data to Deepgram for transcription"""
