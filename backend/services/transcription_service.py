@@ -90,6 +90,7 @@ class TranscriptionService(EventEmitter):
         
         def on_metadata(self_or_metadata, metadata=None, **kwargs):
             # Handle both calling patterns like we did for on_transcript
+            from deepgram.clients.live.v1.client import LiveClient
             
             if isinstance(self_or_metadata, LiveClient):
                 # First argument is the client, use the metadata keyword arg
