@@ -148,14 +148,14 @@ async def websocket_endpoint(websocket: WebSocket):
             'interaction_count': 0,    # Count back-and-forth exchanges
             'websocket': websocket     # Store reference to the websocket
         }
-        
+        logging.info("REACHED HERE1")
         # Set up custom stream service for this client
         stream_service = StreamService(websocket)
         connections[client_id]['stream_service'] = stream_service
-        
+        logging.info("REACHED HERE2")
         # Set up event handlers for this client
         await setup_client_handlers(client_id)
-        logging.info("REACHED HERE")
+        logging.info("REACHED HERE3")
         try:
             # Process incoming WebSocket messages
             while True:
