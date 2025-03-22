@@ -231,9 +231,9 @@ async def setup_client_handlers(client_id: str):
         await conn['tts_service'].generate(gpt_reply, icount)
     
     # Send converted speech to caller
-    def handle_speech(response_index, audio, label, icount):
+    async def handle_speech(response_index, audio, label, icount):
         logger.info(colored(f"Interaction {icount}: TTS -> TWILIO: {label}", "blue"))
-        conn['stream_service'].buffer(response_index, audio)
+        await conn['stream_service'].buffer(response_index, audio)
     
     # Track when audio pieces are sent
     def handle_audio_sent(mark_label):

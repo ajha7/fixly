@@ -33,7 +33,7 @@ class TranscriptionService(EventEmitter):
         )
         
         # Connect to Deepgram streaming API
-        self.dg_connection = self.deepgram.listen.live.v("1")
+        self.dg_connection = self.deepgram.transcription.live.v("1")
         self.dg_connection.start(options)
         
         self.final_result = ""       # Store complete transcription
