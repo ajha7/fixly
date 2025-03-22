@@ -136,7 +136,12 @@ async def websocket_endpoint(websocket: WebSocket):
         client_id = str(id(websocket))
         
         logger.info(f"New client connected: {client_id}")
-    
+        gpt = GptService()
+        logging.info("not gpt issue")
+        deepgram = TranscriptionService()
+        logging.info("not deepgram issue")
+        tts = TextToSpeechService()
+        logging.info("not texttospeech issue")
         # Initialize connection data
         connections[client_id] = {
             'stream_sid': None,
