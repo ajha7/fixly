@@ -88,8 +88,17 @@ class TranscriptionService(EventEmitter):
         def on_warning(warning):
             logger.warning(f"STT -> Deepgram warning: {warning}")
         
-        def on_metadata(metadata):
-            logger.info(f"STT -> Deepgram metadata: {metadata}")
+        def on_metadata(self_or_metadata, metadata=None, **kwargs):
+            # Handle both calling patterns like we did for on_transcript
+            
+            if isinstance(self_or_metadata, LiveClient):
+                # First argument is the client, use the metadata keyword arg
+                metadata_obj = metadata
+            else:
+                # First argument is the metadata itself
+                metadata_obj = self_or_metadata
+                
+            logger.info(f"STT -> Deepgram metadata: {metadata_obj}")
         
         def on_close():
             logger.info(colored("STT -> Deepgram connection closed", "yellow"))
