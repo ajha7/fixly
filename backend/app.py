@@ -12,10 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from termcolor import colored
 from twilio.twiml.voice_response import VoiceResponse, Connect
 from twilio.request_validator import RequestValidator
-from services.gpt_service import GptService
-from services.stream_service import StreamService
-from services.transcription_service import TranscriptionService
-from services.tts_service import TextToSpeechService
+from phone_service.gpt_service import GptService
+from phone_service.stream_service import StreamService
+from phone_service.transcription_service import TranscriptionService
+from phone_service.tts_service import TextToSpeechService
 from logging_conf import configure_logging
 
 # Load environment variables

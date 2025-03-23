@@ -7,6 +7,11 @@ from deepgram import (
     LiveOptions,
     Microphone,
 )
+import sys
+import os
+
+# Add the backend directory to the path to find the events module
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from events import EventEmitter
 import logging
 

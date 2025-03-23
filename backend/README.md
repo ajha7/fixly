@@ -69,8 +69,8 @@ FastAPI automatically generates interactive API documentation. Once the server i
 
 - `app.py` - Main application with FastAPI server and WebSocket handling
 - `events.py` - Custom event emitter implementation
-- `services/`
+- `phone_service/`
   - `gpt_service.py` - Handles conversation with OpenAI GPT
   - `transcription_service.py` - Handles speech-to-text with Deepgram
   - `tts_service.py` - Handles text-to-speech with Deepgram
-  - `stream_service_fastapi.py` - Manages audio streaming to Twilio using FastAPI WebSockets
+  - `stream_service.py` - Manages audio streaming to Twilio using FastAPI WebSockets
