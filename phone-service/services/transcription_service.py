@@ -36,7 +36,7 @@ class TranscriptionService(EventEmitter):
         self.speech_final = False    # Track if speaker has finished naturally
         
         # Define event handler functions
-        def on_open():
+        def on_open(self_or_client=None, **kwargs):
             logger.info(colored("STT -> Deepgram connection established", "yellow"))
         
         def on_transcript(self_or_result, result=None, **kwargs):
@@ -82,11 +82,27 @@ class TranscriptionService(EventEmitter):
                 # Emit interim results for real-time feedback
                 self.emit("utterance", text)
         
-        def on_error(error):
-            logger.error(f"STT -> Deepgram error: {error}")
+        def on_error(self_or_error, error=None, **kwargs):
+            # Handle both calling patterns
+            from deepgram.clients.live.v1.client import LiveClient
+            
+            if isinstance(self_or_error, LiveClient):
+                error_obj = error
+            else:
+                error_obj = self_or_error
+                
+            logger.error(f"STT -> Deepgram error: {error_obj}")
         
-        def on_warning(warning):
-            logger.warning(f"STT -> Deepgram warning: {warning}")
+        def on_warning(self_or_warning, warning=None, **kwargs):
+            # Handle both calling patterns
+            from deepgram.clients.live.v1.client import LiveClient
+            
+            if isinstance(self_or_warning, LiveClient):
+                warning_obj = warning
+            else:
+                warning_obj = self_or_warning
+                
+            logger.warning(f"STT -> Deepgram warning: {warning_obj}")
         
         def on_metadata(self_or_metadata, metadata=None, **kwargs):
             # Handle both calling patterns like we did for on_transcript
@@ -101,7 +117,7 @@ class TranscriptionService(EventEmitter):
                 
             logger.info(f"STT -> Deepgram metadata: {metadata_obj}")
         
-        def on_close():
+        def on_close(self_or_client=None, **kwargs):
             logger.info(colored("STT -> Deepgram connection closed", "yellow"))
         
         # Connect to Deepgram streaming API

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - PHONE_SERVICE_URL=http://phone-service:3001
+    depends_on:
+      - phone-service
+    networks:
+      - fixly-network
+    restart: unless-stopped
+
+  phone-service:
+    build:
+      context: ./phone-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - PHONE_SERVICE_DOMAIN=${PHONE_SERVICE_DOMAIN}
+      - VOICE_MODEL=aura-asteria-en
+    networks:
+      - fixly-network
+    restart: unless-stopped
+
+networks:
+  fixly-network:
+    driver: bridge

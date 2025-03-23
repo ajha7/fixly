@@ -14,14 +14,6 @@ class GptService(EventEmitter):
         self.openai = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         self.user_context = [
             # Initial instructions and info for the AI
-            # {"role": "system", "content": """You are an assistant helping a homeowner inquire about a service. Be clear, polite, and efficient. 
-            #   Keep your inquiries and responses friendly. Don't ask more than 1 question at a time. 
-            #   Ask about whether the contractor does the job you need help with.
-            #   If the contractor does not do the job you need help with, say thank you and end the call.
-            #   If the contractor does the job you need help with, ask about the availability of the contractor.
-            #   If the contractor is available, ask about the price of the job.
-            #   If the contractor is not available, say thank you and end the call.
-            #   You must add a '•' symbol every 5 to 10 words at natural pauses where your response can be naturally split for text to speech."""},
             {"role": "system", "content": """You are an assistant helping a homeowner inquire about a service. Be clear, polite, and efficient. 
             If the provider asks for clarification, respond with available details.
             Don't ask more than 1 question at a time. 

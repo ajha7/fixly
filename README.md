@@ -1,54 +1,98 @@
-# Welcome to your Lovable project
+# Fixly - Home Service Provider Platform
 
-## Project info
+Fixly is a full-stack application that connects customers with local home service providers. The platform allows customers to describe their home-related issues (with text and image uploads) and automatically retrieves local recommendations. The system then uses AI to contact these providers to get quotes and negotiate prices based on the customer's needs. Finally, the application aggregates and displays the provider details in a clean, user-friendly directory for customers to follow up.
 
-**URL**: https://lovable.dev/projects/3d969005-f38a-4f0f-96b7-2d1e19e7ec23
+## Microservice Architecture
 
-## How can I edit this code?
+The application follows a microservice architecture with the following components:
 
-There are several ways of editing your application.
+1. **API Gateway** (`/backend`): The main entry point for all API requests, routing them to the appropriate microservices.
 
-**Use Lovable**
+2. **Phone Service** (`/phone-service`): Handles all voice call functionality, including:
+   - Real-time speech-to-text transcription using Deepgram
+   - Conversational AI using OpenAI's GPT models
+   - Text-to-speech conversion for natural voice responses
+   - WebSocket-based audio streaming with Twilio
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3d969005-f38a-4f0f-96b7-2d1e19e7ec23) and start prompting.
+3. **Frontend** (`/frontend`): React/TypeScript application with a modern UI built using Shadcn components.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Tech Stack
 
-**Use your preferred IDE**
+- **Frontend**: React, TypeScript
+- **Backend**: Python, FastAPI
+- **Database**: MongoDB
+- **AI**: OpenAI
+- **Messaging Service**: Twilio
+- **Audio Processing**: Deepgram
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Python 3.10+
+- Node.js 16+
+- Docker and Docker Compose (optional)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Environment Setup
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Copy the example environment file and fill in your API keys:
 
-# Step 3: Install the necessary dependencies.
-npm i
+```bash
+cp .env.example .env
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Running with Docker
+
+The easiest way to run the entire application is using Docker Compose:
+
+```bash
+docker-compose up
+```
+
+This will start all microservices and make them available at their respective ports.
+
+### Running Locally
+
+#### API Gateway
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app:app --reload --port 3000
+```
+
+#### Phone Service
+
+```bash
+cd phone-service
+pip install -r requirements.txt
+uvicorn app:app --reload --port 3001
+```
+
+#### Frontend
+
+```bash
+cd frontend
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## API Documentation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- API Gateway: http://localhost:3000/docs
+- Phone Service: http://localhost:3001/docs
 
-**Use GitHub Codespaces**
+## Deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The application is designed to be deployed on Render.com:
+
+- **Frontend**: Static Site
+  - Build Command: `npm install && npm run build`
+  - Publish Directory: `dist`
+
+- **Backend Services**: Web Services
+  - Build Command: `pip install -r requirements.txt`
+  - Start Command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
 
 ## What technologies are used for this project?
 
