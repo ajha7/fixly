@@ -4,10 +4,11 @@ sys.path.append(os.path.dirname(__file__))
 import json
 import asyncio
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+from datetime import datetime
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, HTTPException, Depends, Header, status
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, HTTPException, Depends, Header, status, Body, UploadFile, File, Form
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from termcolor import colored
 from twilio.twiml.voice_response import VoiceResponse, Connect
@@ -16,7 +17,13 @@ from phone_service.gpt_service import GptService
 from phone_service.stream_service import StreamService
 from phone_service.transcription_service import TranscriptionService
 from phone_service.tts_service import TextToSpeechService
+from request_service.models import RequestCreate, RequestResponse, DateRange
+from request_service.service import RequestService
+from nextdoor_service.models import ProviderSearchRequest, ProviderSearchResponse, ProviderModel
+from nextdoor_service.service import NextDoorService
+from common.service_categories import ServiceCategory, get_category_from_string
 from logging_conf import configure_logging
+from pymongo import MongoClient
 
 # Load environment variables
 load_dotenv()
@@ -30,9 +37,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# MongoDB connection
+mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017")
+mongo_client = MongoClient(mongo_uri)
+db = mongo_client.fixly_db
+
+# Initialize services
+request_service = RequestService(db)
+nextdoor_service = NextDoorService(db, use_api=False)  # Set to True when API access is granted
+
 @app.on_event("startup")
 async def startup_event():
     configure_logging()
+    logger.info("Connected to MongoDB")
 
 PORT = int(os.environ.get("PORT", 3000))
 
@@ -255,6 +272,121 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Welcome to Fixly API! Visit /docs for API documentation"}
+
+# Mock authentication function - to be replaced with real auth later
+def get_current_user():
+    # This is a mock function that returns a fake user ID
+    # Will be replaced with real authentication in the future
+    return {"user_id": "mock_user_123"}
+
+# Request service endpoints
+@app.post("/api/requests", response_model=RequestResponse)
+async def create_request(
+    request_data: RequestCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new service request with issue description and availability."""
+    try:
+        request_id = await request_service.create_request(
+            user_id=current_user["user_id"],
+            description=request_data.description,
+            availability=request_data.availability,
+            images=request_data.images,
+            location=request_data.location,
+            category=request_data.category,
+            custom_category=request_data.custom_category
+        )
+        return {"id": str(request_id), "message": "Request created successfully"}
+    except Exception as e:
+        logger.error(f"Error creating request: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/requests/{request_id}")
+async def get_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific request by ID."""
+    try:
+        request = await request_service.get_request(request_id, current_user["user_id"])
+        if not request:
+            raise HTTPException(status_code=404, detail="Request not found")
+        return request
+    except Exception as e:
+        logger.error(f"Error retrieving request: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/requests")
+async def get_user_requests(current_user: dict = Depends(get_current_user)):
+    """Get all requests for the current user."""
+    try:
+        requests = await request_service.get_user_requests(current_user["user_id"])
+        return requests
+    except Exception as e:
+        logger.error(f"Error retrieving user requests: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# NextDoor service endpoints
+@app.post("/api/providers/search", response_model=ProviderSearchResponse)
+async def search_providers(search_request: ProviderSearchRequest, current_user: dict = Depends(get_current_user)):
+    """Search for service providers based on category and location."""
+    try:
+        response = await nextdoor_service.search_providers(search_request)
+        return response
+    except Exception as e:
+        logger.error(f"Error searching providers: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/providers/{provider_id}", response_model=ProviderModel)
+async def get_provider(provider_id: str, current_user: dict = Depends(get_current_user)):
+    """Get detailed information for a specific provider."""
+    try:
+        provider = await nextdoor_service.get_provider_details(provider_id)
+        if not provider:
+            raise HTTPException(status_code=404, detail="Provider not found")
+        return provider
+    except Exception as e:
+        logger.error(f"Error retrieving provider: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/requests/{request_id}/find-providers", response_model=ProviderSearchResponse)
+async def find_providers_for_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    """Find service providers for a specific request."""
+    try:
+        # Get the request
+        request = await request_service.get_request(request_id, current_user["user_id"])
+        if not request:
+            raise HTTPException(status_code=404, detail="Request not found")
+        
+        # Create provider search request from the request data
+        category_str = request.get("category", "other")
+        custom_category = request.get("custom_category")
+        
+        # Handle the case where category is "other" and custom_category is provided
+        if category_str.lower() == "other" and custom_category:
+            # For custom categories, we'll use the enum OTHER but also pass the custom_category
+            category_enum = ServiceCategory.OTHER
+        else:
+            # Try to convert to ServiceCategory enum
+            category_enum = get_category_from_string(category_str)
+        
+        search_request = ProviderSearchRequest(
+            category=category_enum if category_enum else category_str,
+            custom_category=custom_category if category_str.lower() == "other" else None,
+            location=request.get("location", {}),
+            radius=10.0,  # Default radius
+            limit=10  # Default limit
+        )
+        
+        # Search for providers
+        response = await nextdoor_service.search_providers(search_request)
+        
+        # Update request with scraped provider IDs
+        provider_ids = [provider.id for provider in response.providers]
+        for provider_id in provider_ids:
+            await request_service.add_scraped_provider(request_id, provider_id)
+        
+        return response
+    except Exception as e:
+        logger.error(f"Error finding providers for request: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
