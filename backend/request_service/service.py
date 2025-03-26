@@ -141,7 +141,7 @@ class RequestService:
             
             # Convert cursor to list and process each document
             requests = []
-            async for request in cursor:
+            for request in cursor:
                 # Convert ObjectId to string for JSON serialization
                 request["id"] = str(request.pop("_id"))
                 requests.append(request)

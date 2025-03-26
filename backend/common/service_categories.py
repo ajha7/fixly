@@ -91,7 +91,7 @@ def get_search_terms(category: ServiceCategory) -> List[str]:
     Returns:
         List of search terms
     """
-    return SEARCH_TERMS_MAPPING.get(category, ["contractor", "home service"])
+    return SEARCH_TERMS_MAPPING.get(category, ["contractor"])
 
 
 def get_category_from_string(category_str: str) -> Optional[ServiceCategory]:
