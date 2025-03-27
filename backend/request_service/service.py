@@ -136,10 +136,10 @@ class RequestService:
             Exception: If there's an error retrieving the requests
         """
         try:
-            logging.info(f"Retrieving requests for user: {user_id}")
+            logger.info(f"Retrieving requests for user: {user_id}")
             # Find all requests for the user in MongoDB
             cursor = self.collection.find({"user_id": user_id})
-            logging.info(f"Found {cursor.count()} requests for user: {user_id}")
+            logger.info(f"Found {cursor} requests for user: {user_id}")
             # Convert cursor to list and process each document
             requests = []
 
@@ -147,7 +147,7 @@ class RequestService:
                 # Convert ObjectId to string for JSON serialization
                 request["id"] = str(request.pop("_id"))
                 requests.append(request)
-            logging.info(f"Returning {len(requests)} requests for user: {user_id}")
+            logger.info(f"Returning {len(requests)} requests for user: {user_id}")
             return requests
         except Exception as e:
             logger.error(f"Error retrieving user requests: {str(e)}")
