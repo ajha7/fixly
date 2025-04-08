@@ -25,7 +25,9 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     proxy: {
       // Proxy API requests to the backend server
       '/api': {
-        target: getEnv('VITE_API_URL', 'http://localhost:3000'),
+        // target: getEnv('VITE_API_URL', 'http://localhost:3000'),
+        // use vite_api_url without backup
+        target: import.meta.env.VITE_API_URL,
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/api/, '')
       },
