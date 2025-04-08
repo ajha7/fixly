@@ -16,7 +16,7 @@ const getEnv = (key: string, defaultValue: string): string => {
     return defaultValue;
   }
 };
-
+console.log("VITE_API_URL", import.meta.env.VITE_API_URL);
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }: { mode: string }) => ({
   server: {
