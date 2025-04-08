@@ -27,7 +27,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
       '/api': {
         // target: getEnv('VITE_API_URL', 'http://localhost:3000'),
         // use vite_api_url without backup
-        target: import.meta.env.VITE_API_URL,
+        target: getEnv('VITE_API_URL', 'https://fixly-axwo.onrender.com/'),
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/api/, '')
       },
