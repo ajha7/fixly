@@ -21,6 +21,10 @@ from request_service.models import RequestCreate, RequestResponse, DateRange
 from request_service.service import RequestService
 from nextdoor_service.models import ProviderSearchRequest, ProviderSearchResponse, ProviderModel
 from nextdoor_service.service import NextDoorService
+from auth_service.models import User, UserCreate, UserResponse, SocialProvider, TokenData, TokenResponse, MagicLinkRequest, MagicLinkVerify, SocialLoginRequest
+from auth_service.service import AuthService
+from auth_service.social_auth import get_social_provider
+from email_service.service import EmailService
 from common.service_categories import ServiceCategory, get_category_from_string
 from logging_conf import configure_logging
 from pymongo import MongoClient
@@ -45,6 +49,7 @@ db = mongo_client.fixly_db
 # Initialize services
 request_service = RequestService(db)
 nextdoor_service = NextDoorService(db, use_api=False)  # Set to True when API access is granted
+auth_service = AuthService(db)
 
 @app.on_event("startup")
 async def startup_event():
@@ -273,11 +278,62 @@ async def health_check():
 async def root():
     return {"message": "Welcome to Fixly API! Visit /docs for API documentation"}
 
-# Mock authentication function - to be replaced with real auth later
-def get_current_user():
-    # This is a mock function that returns a fake user ID
-    # Will be replaced with real authentication in the future
-    return {"user_id": "mock_user_123"}
+# Authentication middleware
+async def get_current_user(authorization: Optional[str] = Header(None)):
+    """Get the current authenticated user from the JWT token.
+    
+    Args:
+        authorization: Authorization header with JWT token
+        
+    Returns:
+        User data
+        
+    Raises:
+        HTTPException: If authentication fails
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    try:
+        # Extract token from header
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        
+        # Verify token
+        token_data = await auth_service.verify_token(token)
+        if not token_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token or token expired",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        
+        # Get user from database
+        user = await auth_service.get_user_by_id(token_data.user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        
+        return {"user_id": user.id, "email": user.email}
+    except Exception as e:
+        logger.error(f"Authentication error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 # Request service endpoints
 @app.post("/api/requests", response_model=RequestResponse)
@@ -386,6 +442,120 @@ async def find_providers_for_request(request_id: str, current_user: dict = Depen
         return response
     except Exception as e:
         logger.error(f"Error finding providers for request: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Authentication endpoints
+@app.post("/api/auth/register", response_model=TokenResponse)
+async def register_user(user_data: UserCreate):
+    """Register a new user."""
+    try:
+        # Register the user
+        user = await auth_service.register_user(user_data)
+        
+        # Create access token
+        token_response = await auth_service.create_access_token(user)
+        
+        return token_response
+    except Exception as e:
+        logger.error(f"Error registering user: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/social-login", response_model=TokenResponse)
+async def social_login(login_data: SocialLoginRequest):
+    """Authenticate with a social provider."""
+    try:
+        # Authenticate with the social provider
+        if login_data.provider == SocialProvider.GOOGLE:
+            user = await auth_service.authenticate_google(login_data.token)
+        elif login_data.provider == SocialProvider.NEXTDOOR:
+            user = await auth_service.authenticate_nextdoor(login_data.token, login_data.redirect_url)
+        elif login_data.provider == SocialProvider.FACEBOOK:
+            user = await auth_service.authenticate_facebook(login_data.token)
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported social provider")
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Authentication failed")
+        
+        # Create access token
+        token_response = await auth_service.create_access_token(user)
+        
+        return token_response
+    except Exception as e:
+        logger.error(f"Error authenticating with social provider: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/social-auth-url")
+async def get_social_auth_url(provider: SocialProvider, redirect_uri: str, state: Optional[str] = None):
+    """Get the authorization URL for a social provider."""
+    try:
+        # Get the social provider
+        social_provider = get_social_provider(provider)
+        
+        # Get the authorization URL
+        auth_url = await social_provider.get_auth_url(redirect_uri, state)
+        
+        return {"auth_url": auth_url}
+    except Exception as e:
+        logger.error(f"Error getting social auth URL: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/magic-link")
+async def create_magic_link(request_data: MagicLinkRequest):
+    """Create and send a magic link for email authentication."""
+    try:
+        # Create and send the magic link
+        success = await auth_service.create_magic_link(request_data.email, request_data.redirect_url)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to send magic link")
+        
+        return {"message": "Magic link sent successfully"}
+    except Exception as e:
+        logger.error(f"Error creating magic link: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/verify-magic-link", response_model=TokenResponse)
+async def verify_magic_link(verify_data: MagicLinkVerify):
+    """Verify a magic link token and authenticate the user."""
+    try:
+        # Verify the magic link
+        user = await auth_service.verify_magic_link(verify_data.token)
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid or expired magic link")
+        
+        # Create access token
+        token_response = await auth_service.create_access_token(user)
+        
+        return token_response
+    except Exception as e:
+        logger.error(f"Error verifying magic link: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/auth/me", response_model=UserResponse)
+async def get_current_user_profile(current_user: dict = Depends(get_current_user)):
+    """Get the current user's profile."""
+    try:
+        # Get the user from the database
+        user = await auth_service.get_user_by_id(current_user["user_id"])
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Create user response
+        user_response = UserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            phone=user.phone,
+            profile_picture=user.profile_picture,
+            email_verified=user.email_verified
+        )
+        
+        return user_response
+    except Exception as e:
+        logger.error(f"Error getting user profile: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

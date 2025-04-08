@@ -14,3 +14,6 @@ pymongo
 pydantic==2.5.2
 motor==3.1.1
 beautifulsoup4
+sendgrid==6.10.0
+pyjwt==2.8.0
+google-auth==2.23.4
