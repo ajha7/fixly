@@ -2,21 +2,19 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import * as path from "path";
 import { componentTagger } from "lovable-tagger";
+import dotenv from "dotenv";  
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Safe access to environment variables
 const getEnv = (key: string, defaultValue: string): string => {
   if (typeof process !== 'undefined' && process.env && process.env[key]) {
     return process.env[key] as string;
   }
-  
-  try {
-    // @ts-ignore - import.meta.env might not be available during build
-    return import.meta.env?.[key] || defaultValue;
-  } catch (e) {
-    return defaultValue;
-  }
+  return defaultValue;
 };
-console.log("VITE_API_URL", import.meta.env.VITE_API_URL);
+console.log("API_URL", process.env.API_URL);
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }: { mode: string }) => ({
   server: {
@@ -25,9 +23,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     proxy: {
       // Proxy API requests to the backend server
       '/api': {
-        // target: getEnv('VITE_API_URL', 'http://localhost:3000'),
-        // use vite_api_url without backup
-        target: import.meta.env.VITE_API_URL,
+        target: process.env.API_URL || 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/api/, '')
       },
