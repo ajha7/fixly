@@ -17,3 +17,4 @@ beautifulsoup4
 sendgrid==6.10.0
 pyjwt==2.8.0
 google-auth==2.23.4
+pydantic[email]
