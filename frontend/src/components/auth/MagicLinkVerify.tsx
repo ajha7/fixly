@@ -3,13 +3,23 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Container } from '@mui/material';
 import { authService } from '../../services/authService';
 
-const MagicLinkVerify = () => {
+interface AuthResponse {
+  access_token: string;
+  user: {
+    id: string;
+    name?: string;
+    email: string;
+    [key: string]: any;
+  };
+}
+
+const MagicLinkVerify: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   
   useEffect(() => {
-    const verifyMagicLink = async () => {
+    const verifyMagicLink = async (): Promise<void> => {
       try {
         // Parse the URL query parameters
         const queryParams = new URLSearchParams(location.search);
@@ -21,7 +31,7 @@ const MagicLinkVerify = () => {
         }
         
         // Verify the magic link token
-        const response = await authService.verifyMagicLink(token);
+        const response: AuthResponse = await authService.verifyMagicLink(token);
         
         // Store the token and user data
         localStorage.setItem('auth_token', response.access_token);

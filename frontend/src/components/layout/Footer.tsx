@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Container, Typography, Link, Grid, useTheme } from '@mui/material';
 import HomeRepairServiceIcon from '@mui/icons-material/HomeRepairService';
 
-const Footer = () => {
+const Footer: React.FC = () => {
   const theme = useTheme();
   const currentYear = new Date().getFullYear();
   
@@ -50,24 +50,29 @@ const Footer = () => {
           
           <Grid item xs={12} sm={4}>
             <Typography variant="h6" color="text.primary" gutterBottom>
-              Contact Us
+              Contact
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Email: support@fixly.com
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Phone: (555) 123-4567
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Address: 123 Fix Street, Repair City, RC 12345
+              123 Main Street<br />
+              San Francisco, CA 94105<br />
+              support@fixly.com<br />
+              (415) 555-1234
             </Typography>
           </Grid>
         </Grid>
         
-        <Box sx={{ mt: 5, textAlign: 'center' }}>
+        <Box sx={{ mt: 5, borderTop: 1, borderColor: 'divider', pt: 3, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             © {currentYear} Fixly. All rights reserved.
           </Typography>
+          <Box sx={{ mt: 1 }}>
+            <Link href="/privacy" color="inherit" sx={{ mx: 1 }}>
+              Privacy Policy
+            </Link>
+            <Link href="/terms" color="inherit" sx={{ mx: 1 }}>
+              Terms of Service
+            </Link>
+          </Box>
         </Box>
       </Container>
     </Box>

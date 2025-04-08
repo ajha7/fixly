@@ -3,14 +3,24 @@ import { Container, Typography, Box, Grid, Card, CardContent, CardActions, Butto
 import { Link as RouterLink } from 'react-router-dom';
 import { authService } from '../../services/authService';
 
-const RequestsPage = () => {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+interface Request {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: 'open' | 'in_progress' | 'completed';
+  created_at: string;
+  location: string;
+}
+
+const RequestsPage: React.FC = () => {
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     // This would be replaced with actual API call to fetch user requests
-    const fetchRequests = async () => {
+    const fetchRequests = async (): Promise<void> => {
       try {
         setLoading(true);
         // Placeholder for API call
@@ -22,7 +32,7 @@ const RequestsPage = () => {
         // const data = await response.json();
         
         // Mock data for now
-        const mockRequests = [
+        const mockRequests: Request[] = [
           {
             id: '1',
             title: 'Leaking Kitchen Sink',
@@ -65,13 +75,13 @@ const RequestsPage = () => {
   }, []);
 
   // Helper function to format date
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const formatDate = (dateString: string): string => {
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   // Helper function to get status color
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string): 'primary' | 'warning' | 'success' | 'default' => {
     switch (status) {
       case 'open':
         return 'primary';
@@ -85,7 +95,7 @@ const RequestsPage = () => {
   };
 
   // Helper function to get status label
-  const getStatusLabel = (status) => {
+  const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'open':
         return 'Open';
@@ -94,14 +104,34 @@ const RequestsPage = () => {
       case 'completed':
         return 'Completed';
       default:
-        return status;
+        return status.charAt(0).toUpperCase() + status.slice(1);
     }
   };
+
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Typography color="error" variant="h6" sx={{ my: 4 }}>
+          {error}
+        </Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Typography variant="h4" component="h1">
           My Service Requests
         </Typography>
         <Button 
@@ -110,25 +140,17 @@ const RequestsPage = () => {
           component={RouterLink} 
           to="/requests/new"
         >
-          Create New Request
+          New Request
         </Button>
       </Box>
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Typography color="error" sx={{ my: 4 }}>
-          {error}
-        </Typography>
-      ) : requests.length === 0 ? (
-        <Box sx={{ textAlign: 'center', my: 4, p: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
+      
+      {requests.length === 0 ? (
+        <Box sx={{ textAlign: 'center', my: 8, p: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
           <Typography variant="h6" gutterBottom>
             You don't have any service requests yet
           </Typography>
           <Typography variant="body1" color="text.secondary" paragraph>
-            Create your first request to get started with Fixly
+            Create a new request to find local service providers for your home needs
           </Typography>
           <Button 
             variant="contained" 
@@ -152,29 +174,29 @@ const RequestsPage = () => {
                     </Typography>
                     <Chip 
                       label={getStatusLabel(request.status)} 
-                      color={getStatusColor(request.status)}
+                      color={getStatusColor(request.status)} 
                       size="small"
                     />
                   </Box>
                   
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     Created on {formatDate(request.created_at)}
                   </Typography>
                   
-                  <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+                  <Typography variant="body1" paragraph>
                     {request.description}
                   </Typography>
                   
-                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     <Chip 
                       label={request.category.charAt(0).toUpperCase() + request.category.slice(1)} 
-                      size="small" 
-                      variant="outlined"
+                      variant="outlined" 
+                      size="small"
                     />
                     <Chip 
                       label={request.location} 
-                      size="small" 
-                      variant="outlined"
+                      variant="outlined" 
+                      size="small"
                     />
                   </Box>
                 </CardContent>

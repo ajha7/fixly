@@ -17,24 +17,45 @@ import {
   Rating,
   Divider,
   CircularProgress,
-  Pagination
+  Pagination,
+  SelectChangeEvent
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import VerifiedIcon from '@mui/icons-material/Verified';
 
-const ProvidersPage = () => {
-  const [providers, setProviders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [category, setCategory] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+interface Provider {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  reviews: number;
+  description: string;
+  location: string;
+  phone: string;
+  email: string;
+  website: string;
+  image?: string;
+  verified: boolean;
+}
+
+interface ServiceCategory {
+  value: string;
+  label: string;
+}
+
+const ProvidersPage: React.FC = () => {
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [category, setCategory] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
   
   // Available service categories
-  const serviceCategories = [
+  const serviceCategories: ServiceCategory[] = [
     { value: '', label: 'All Categories' },
     { value: 'plumbing', label: 'Plumbing' },
     { value: 'electrical', label: 'Electrical' },
@@ -48,12 +69,12 @@ const ProvidersPage = () => {
 
   useEffect(() => {
     // This would be replaced with actual API call to fetch providers
-    const fetchProviders = async () => {
+    const fetchProviders = async (): Promise<void> => {
       try {
         setLoading(true);
         
         // Mock data for now
-        const mockProviders = [
+        const mockProviders: Provider[] = [
           {
             id: '101',
             name: 'Quick Fix Plumbing',
@@ -175,17 +196,17 @@ const ProvidersPage = () => {
     fetchProviders();
   }, [searchTerm, category, page]);
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setSearchTerm(e.target.value);
     setPage(1); // Reset to first page when search changes
   };
 
-  const handleCategoryChange = (e) => {
+  const handleCategoryChange = (e: SelectChangeEvent): void => {
     setCategory(e.target.value);
     setPage(1); // Reset to first page when category changes
   };
 
-  const handlePageChange = (event, value) => {
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number): void => {
     setPage(value);
   };
 
@@ -270,8 +291,8 @@ const ProvidersPage = () => {
                             borderRadius: 1,
                             mb: 1
                           }}
-                          onError={(e) => {
-                            e.target.src = '/static/images/placeholder.jpg';
+                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                            e.currentTarget.src = '/static/images/placeholder.jpg';
                           }}
                         />
                       </Grid>

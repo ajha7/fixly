@@ -3,19 +3,26 @@ import { TextField, Button, Box, Typography, CircularProgress, Alert } from '@mu
 import EmailIcon from '@mui/icons-material/Email';
 import { authService } from '../../services/authService';
 
-const MagicLinkForm = ({ onSuccess, onError, setIsLoading, isLoading }) => {
-  const [email, setEmail] = useState('');
-  const [emailSent, setEmailSent] = useState(false);
-  const [emailError, setEmailError] = useState('');
+interface MagicLinkFormProps {
+  onSuccess: () => void;
+  onError: (message: string) => void;
+  setIsLoading: (isLoading: boolean) => void;
+  isLoading: boolean;
+}
+
+const MagicLinkForm: React.FC<MagicLinkFormProps> = ({ onSuccess, onError, setIsLoading, isLoading }) => {
+  const [email, setEmail] = useState<string>('');
+  const [emailSent, setEmailSent] = useState<boolean>(false);
+  const [emailError, setEmailError] = useState<string>('');
 
   // Validate email format
-  const validateEmail = (email) => {
+  const validateEmail = (email: string): boolean => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return re.test(email);
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
     // Reset errors
@@ -39,7 +46,7 @@ const MagicLinkForm = ({ onSuccess, onError, setIsLoading, isLoading }) => {
       const redirectUrl = window.location.origin + '/auth/verify';
       
       // Send magic link request
-      await authService.requestMagicLink(email, redirectUrl);
+      await authService.sendMagicLink(email, redirectUrl);
       
       // Show success message
       setEmailSent(true);

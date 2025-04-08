@@ -3,7 +3,7 @@ import { Box, Container, Typography, Button, Paper } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 
-const NotFoundPage = () => {
+const NotFoundPage: React.FC = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 8, mb: 4 }}>
       <Paper 

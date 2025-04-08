@@ -3,18 +3,30 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Container } from '@mui/material';
 import { authService } from '../../services/authService';
 
-const SocialAuthCallback = () => {
+interface AuthResponse {
+  access_token: string;
+  user: {
+    id: string;
+    name?: string;
+    email: string;
+    [key: string]: any;
+  };
+}
+
+type SocialProvider = 'google' | 'facebook' | 'nextdoor';
+
+const SocialAuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   
   useEffect(() => {
-    const handleCallback = async () => {
+    const handleCallback = async (): Promise<void> => {
       try {
         // Parse the URL query parameters
         const queryParams = new URLSearchParams(location.search);
         const code = queryParams.get('code');
-        const provider = queryParams.get('provider') || 'google'; // Default to Google if not specified
+        const provider = (queryParams.get('provider') || 'google') as SocialProvider;
         const error = queryParams.get('error');
         
         // Check for errors in the callback
@@ -32,7 +44,7 @@ const SocialAuthCallback = () => {
         const redirectUri = window.location.origin + '/auth/callback';
         
         // Complete the social login process
-        const response = await authService.completeSocialLogin(provider, code, redirectUri);
+        const response: AuthResponse = await authService.completeSocialLogin(provider, code, redirectUri);
         
         // Store the token and user data
         localStorage.setItem('auth_token', response.access_token);
@@ -70,10 +82,10 @@ const SocialAuthCallback = () => {
           <>
             <CircularProgress sx={{ mb: 3 }} />
             <Typography variant="h5" gutterBottom>
-              Completing Sign In
+              Completing Authentication
             </Typography>
             <Typography color="text.secondary">
-              Please wait while we complete the authentication process...
+              Please wait while we complete your sign in...
             </Typography>
           </>
         )}

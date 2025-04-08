@@ -6,25 +6,38 @@ import HomeIcon from '@mui/icons-material/Home'; // Using HomeIcon for Nextdoor
 import { useTheme } from '@mui/material/styles';
 import { authService } from '../../services/authService';
 
-const SocialLoginButtons = ({ onSuccess, onError, setIsLoading, isLoading }) => {
+interface SocialLoginButtonsProps {
+  onSuccess: (token: any) => void;
+  onError: (message: string) => void;
+  setIsLoading: (isLoading: boolean) => void;
+  isLoading: boolean;
+}
+
+type SocialProvider = 'google' | 'facebook' | 'nextdoor';
+
+const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({ onSuccess, onError, setIsLoading, isLoading }) => {
   const theme = useTheme();
 
   // Handle social login click
-  const handleSocialLogin = async (provider) => {
+  const handleSocialLogin = async (provider: SocialProvider): Promise<void> => {
     try {
       setIsLoading(true);
       
       // Get the redirect URI (current URL)
       const redirectUri = window.location.origin + '/auth/callback';
       
+      // Generate a random state for security
+      const state = Math.random().toString(36).substring(2, 15);
+      
       // Get the authorization URL
-      const response = await authService.getSocialAuthUrl(provider, redirectUri);
+      const response = await authService.getSocialAuthUrl(provider, redirectUri, state);
       
       // Redirect to the authorization URL
       window.location.href = response.auth_url;
     } catch (error) {
       console.error(`Error initiating ${provider} login:`, error);
       onError(`Failed to connect with ${provider}. Please try again.`);
+      setIsLoading(false);
     }
   };
 

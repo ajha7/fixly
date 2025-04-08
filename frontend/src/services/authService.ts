@@ -1,10 +1,10 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 // API base URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 // Create axios instance with base URL
-const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -13,9 +13,9 @@ const api = axios.create({
 
 // Add request interceptor to include auth token in requests
 api.interceptors.request.use(
-  (config) => {
+  (config: AxiosRequestConfig) => {
     const token = localStorage.getItem('auth_token');
-    if (token) {
+    if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -23,16 +23,25 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Define user interface
+interface User {
+  id: string;
+  name?: string;
+  email: string;
+  profile_picture?: string;
+  [key: string]: any;
+}
+
 // Authentication service
 export const authService = {
   // Register a new user
-  async register(userData) {
+  async register(userData: { email: string; name?: string; password?: string }): Promise<any> {
     const response = await api.post('/api/auth/register', userData);
     return response.data;
   },
   
   // Get social auth URL
-  async getSocialAuthUrl(provider, redirectUri, state) {
+  async getSocialAuthUrl(provider: string, redirectUri: string, state: string): Promise<any> {
     const response = await api.post('/api/auth/social-auth-url', null, {
       params: { provider, redirect_uri: redirectUri, state },
     });
@@ -40,17 +49,23 @@ export const authService = {
   },
   
   // Complete social login with code
-  async completeSocialLogin(provider, token, redirectUrl) {
+  async completeSocialLogin(provider: string, token: string, redirectUrl: string): Promise<any> {
     const response = await api.post('/api/auth/social-login', {
       provider,
       token,
       redirect_url: redirectUrl,
     });
+    
+    if (response.data.token) {
+      localStorage.setItem('auth_token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   },
   
-  // Request magic link
-  async requestMagicLink(email, redirectUrl) {
+  // Send magic link
+  async sendMagicLink(email: string, redirectUrl: string): Promise<any> {
     const response = await api.post('/api/auth/magic-link', {
       email,
       redirect_url: redirectUrl,
@@ -59,35 +74,40 @@ export const authService = {
   },
   
   // Verify magic link
-  async verifyMagicLink(token) {
-    const response = await api.post('/api/auth/verify-magic-link', {
-      token,
-    });
+  async verifyMagicLink(token: string): Promise<any> {
+    const response = await api.post('/api/auth/verify-magic-link', { token });
+    
+    if (response.data.token) {
+      localStorage.setItem('auth_token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   },
   
   // Get current user profile
-  async getCurrentUser() {
-    const response = await api.get('/api/auth/me');
+  async getCurrentUser(): Promise<User> {
+    const response = await api.get('/api/users/me');
     return response.data;
   },
   
   // Check if user is authenticated
-  isAuthenticated() {
+  isAuthenticated(): boolean {
     return !!localStorage.getItem('auth_token');
   },
   
   // Get user data
-  getUserData() {
-    const userData = localStorage.getItem('user_data');
+  getUserData(): User | null {
+    const userData = localStorage.getItem('user');
     return userData ? JSON.parse(userData) : null;
   },
   
   // Logout
-  logout() {
+  logout(): void {
     localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-  },
+    localStorage.removeItem('user');
+    // Redirect to home page or login page if needed
+  }
 };
 
 export default authService;

@@ -20,16 +20,58 @@ import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { authService } from '../../services/authService';
 
-const ProfilePage = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [tabValue, setTabValue] = useState(0);
-  const [editing, setEditing] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+interface User {
+  id: string;
+  name?: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  profile_picture?: string;
+  email_verified?: boolean;
+  created_at: string;
+  requests?: Array<{
+    id: string;
+    title: string;
+    status: string;
+    created_at: string;
+  }>;
+  [key: string]: any;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  profilePicture: string;
+}
+
+interface SnackbarState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'warning' | 'info';
+}
+
+const ProfilePage: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [tabValue, setTabValue] = useState<number>(0);
+  const [editing, setEditing] = useState<boolean>(false);
+  const [snackbar, setSnackbar] = useState<SnackbarState>({ 
+    open: false, 
+    message: '', 
+    severity: 'success' 
+  });
   
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     phone: '',
@@ -42,7 +84,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     // Fetch user profile data
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = async (): Promise<void> => {
       try {
         setLoading(true);
         
@@ -50,7 +92,7 @@ const ProfilePage = () => {
         // const response = await authService.getCurrentUser();
         
         // Mock user data for now
-        const mockUser = {
+        const mockUser: User = {
           id: '123',
           name: 'John Doe',
           email: 'john.doe@example.com',
@@ -59,7 +101,7 @@ const ProfilePage = () => {
           city: 'San Francisco',
           state: 'CA',
           zipCode: '94105',
-          profilePicture: 'https://example.com/profile.jpg',
+          profile_picture: 'https://example.com/profile.jpg',
           email_verified: true,
           created_at: '2025-01-15T10:30:00Z',
           requests: [
@@ -95,7 +137,7 @@ const ProfilePage = () => {
           city: mockUser.city || '',
           state: mockUser.state || '',
           zipCode: mockUser.zipCode || '',
-          profilePicture: mockUser.profilePicture || ''
+          profilePicture: mockUser.profile_picture || ''
         });
         
         setLoading(false);
@@ -110,12 +152,12 @@ const ProfilePage = () => {
   }, []);
 
   // Handle tab change
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
     setTabValue(newValue);
   };
   
   // Handle form field changes
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -124,29 +166,31 @@ const ProfilePage = () => {
   };
   
   // Start editing profile
-  const handleEditProfile = () => {
+  const handleEditProfile = (): void => {
     setEditing(true);
   };
   
   // Cancel editing profile
-  const handleCancelEdit = () => {
+  const handleCancelEdit = (): void => {
     // Reset form data to user data
-    setFormData({
-      name: user.name || '',
-      email: user.email || '',
-      phone: user.phone || '',
-      address: user.address || '',
-      city: user.city || '',
-      state: user.state || '',
-      zipCode: user.zipCode || '',
-      profilePicture: user.profilePicture || ''
-    });
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        city: user.city || '',
+        state: user.state || '',
+        zipCode: user.zipCode || '',
+        profilePicture: user.profile_picture || ''
+      });
+    }
     
     setEditing(false);
   };
   
   // Save profile changes
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (): Promise<void> => {
     try {
       setLoading(true);
       
@@ -157,10 +201,18 @@ const ProfilePage = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Update user data with form data
-      setUser({
-        ...user,
-        ...formData
-      });
+      if (user) {
+        setUser({
+          ...user,
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          profile_picture: formData.profilePicture
+        });
+      }
       
       setEditing(false);
       setSnackbar({
@@ -181,18 +233,21 @@ const ProfilePage = () => {
   };
   
   // Handle snackbar close
-  const handleSnackbarClose = () => {
+  const handleSnackbarClose = (event?: React.SyntheticEvent | Event, reason?: string): void => {
+    if (reason === 'clickaway') {
+      return;
+    }
     setSnackbar({ ...snackbar, open: false });
   };
   
   // Format date for display
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const formatDate = (dateString: string): string => {
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
   
   // Get status color
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'open':
         return '#2196f3'; // Blue
@@ -287,8 +342,8 @@ const ProfilePage = () => {
             <Grid item xs={12} sm={4} md={3}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Avatar 
-                  src={user.profilePicture} 
-                  alt={user.name}
+                  src={user?.profile_picture} 
+                  alt={user?.name || 'User'}
                   sx={{ width: 150, height: 150, mb: 2 }}
                 />
                 {editing && (
@@ -329,7 +384,7 @@ const ProfilePage = () => {
                     onChange={handleChange}
                     margin="normal"
                     disabled={true} // Email should not be editable
-                    helperText={user.email_verified ? "Verified" : "Not verified"}
+                    helperText={user?.email_verified ? "Verified" : "Not verified"}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -399,7 +454,7 @@ const ProfilePage = () => {
           
           <Box sx={{ mt: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Member since {formatDate(user.created_at)}
+              Member since {user?.created_at ? formatDate(user.created_at) : ''}
             </Typography>
           </Box>
         </Paper>
@@ -412,13 +467,13 @@ const ProfilePage = () => {
             Request History
           </Typography>
           
-          {user.requests.length === 0 ? (
+          {user?.requests && user.requests.length === 0 ? (
             <Typography variant="body1" color="text.secondary" sx={{ my: 2 }}>
               You haven't made any service requests yet.
             </Typography>
           ) : (
             <Box sx={{ mt: 2 }}>
-              {user.requests.map((request) => (
+              {user?.requests?.map((request) => (
                 <Paper 
                   key={request.id} 
                   variant="outlined" 

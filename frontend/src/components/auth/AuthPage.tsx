@@ -4,18 +4,35 @@ import SocialLoginButtons from './SocialLoginButtons';
 import MagicLinkForm from './MagicLinkForm';
 import { Box, Container, Typography, Paper, Divider, useTheme } from '@mui/material';
 
-const AuthPage = () => {
+interface AuthToken {
+  access_token: string;
+  user: {
+    id: string;
+    name?: string;
+    email: string;
+    [key: string]: any;
+  };
+}
+
+interface LocationState {
+  from?: {
+    pathname: string;
+  };
+}
+
+const AuthPage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   
   // Get the redirect URL from query params or default to home
-  const from = location.state?.from?.pathname || '/';
+  const state = location.state as LocationState;
+  const from = state?.from?.pathname || '/';
   
   // Handle successful authentication
-  const handleAuthSuccess = (token) => {
+  const handleAuthSuccess = (token: AuthToken): void => {
     // Store the token in localStorage
     localStorage.setItem('auth_token', token.access_token);
     localStorage.setItem('user_data', JSON.stringify(token.user));
@@ -25,7 +42,7 @@ const AuthPage = () => {
   };
   
   // Handle authentication error
-  const handleAuthError = (errorMessage) => {
+  const handleAuthError = (errorMessage: string): void => {
     setError(errorMessage);
     setIsLoading(false);
   };
