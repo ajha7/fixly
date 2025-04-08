@@ -2,11 +2,14 @@
 
 // Add type definitions for import.meta
 interface ImportMeta {
-  url: string;
-  env: {
-    VITE_API_URL?: string;
+  readonly env: {
+    readonly VITE_API_URL?: string;
     // VITE_WS_URL?: string;
-    [key: string]: string | undefined;
+    readonly [key: string]: string | undefined;
+    readonly MODE: string;
+    readonly BASE_URL: string;
+    readonly PROD: boolean;
+    readonly DEV: boolean;
   };
 }
 

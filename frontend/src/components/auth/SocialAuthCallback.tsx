@@ -29,6 +29,8 @@ const SocialAuthCallback: React.FC = () => {
         const provider = (queryParams.get('provider') || 'google') as SocialProvider;
         const error = queryParams.get('error');
         
+        console.log('Auth callback received:', { code, provider, error });
+        
         // Check for errors in the callback
         if (error) {
           setError(`Authentication error: ${error}`);
@@ -40,11 +42,13 @@ const SocialAuthCallback: React.FC = () => {
           return;
         }
         
-        // Get the redirect URI (current URL without query params)
-        const redirectUri = window.location.origin + '/auth/callback';
+        // Get the redirect URI with provider parameter to match what was sent
+        const redirectUri = window.location.origin + `/auth/callback?provider=${provider}`;
         
         // Complete the social login process
+        console.log('Completing social login with:', { provider, code, redirectUri });
         const response: AuthResponse = await authService.completeSocialLogin(provider, code, redirectUri);
+        console.log('Social login response:', response);
         
         // Store the token and user data
         localStorage.setItem('auth_token', response.access_token);

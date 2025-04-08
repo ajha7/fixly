@@ -23,8 +23,8 @@ const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({ onSuccess, onEr
     try {
       setIsLoading(true);
       
-      // Get the redirect URI (current URL)
-      const redirectUri = window.location.origin + '/auth/callback';
+      // Get the redirect URI with provider parameter
+      const redirectUri = window.location.origin + `/auth/callback?provider=${provider}`;
       
       // Generate a random state for security
       const state = Math.random().toString(36).substring(2, 15);
