@@ -489,12 +489,13 @@ async def social_login(login_data: SocialLoginRequest):
 async def get_social_auth_url(provider: SocialProvider, redirect_uri: str, state: Optional[str] = None):
     """Get the authorization URL for a social provider."""
     try:
+        logger.info("Getting social provider")
         # Get the social provider
         social_provider = get_social_provider(provider)
-        
+        logger.info(f"Getting auth URL for provider: {provider}")
         # Get the authorization URL
         auth_url = await social_provider.get_auth_url(redirect_uri, state)
-        
+        logger.info(f"Auth URL: {auth_url}")
         return {"auth_url": auth_url}
     except Exception as e:
         logger.error(f"Error getting social auth URL: {str(e)}")
