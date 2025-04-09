@@ -101,11 +101,16 @@ const AuthPage: React.FC = () => {
           />
         </Box>
         
-        {process.env.NODE_ENV !== 'production' && (
+        {/*process.env.NODE_ENV !== 'production' && (
           <Box sx={{ width: '100%', mt: 3 }}>
             <AutoLogin />
           </Box>
-        )}
+        )*/
+        <Box sx={{ width: '100%', mt: 3 }}>
+          <AutoLogin />
+        </Box>
+        }
+
       </Paper>
     </Container>
   );
