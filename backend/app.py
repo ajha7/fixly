@@ -308,12 +308,23 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
                 headers={"WWW-Authenticate": "Bearer"}
             )
         
-        # Verify token
+        # Special case for development auto-login token
+        if token == "dev-token-123456789":
+            return {
+                "id": "dev-user-123",
+                "email": "dev@fixly.com",
+                "name": "Development User",
+                "profile_picture": "https://ui-avatars.com/api/?name=Dev+User&background=0D8ABC&color=fff",
+                "created_at": datetime.now().isoformat(),
+                "is_admin": True
+            }
+        
+        # Verify token with auth service
         token_data = await auth_service.verify_token(token)
         if not token_data:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token or token expired",
+                detail="Invalid or expired token",
                 headers={"WWW-Authenticate": "Bearer"}
             )
         
@@ -445,6 +456,32 @@ async def find_providers_for_request(request_id: str, current_user: dict = Depen
         raise HTTPException(status_code=500, detail=str(e))
 
 # Authentication endpoints
+@app.post("/api/auth/auto-login")
+async def auto_login():
+    """Auto-login endpoint for development purposes.
+    
+    Returns fake user data and a token for testing without requiring actual authentication.
+    This should only be used in development environments.
+    """
+    # Create a fake user with admin privileges
+    fake_user = {
+        "id": "dev-user-123",
+        "email": "dev@fixly.com",
+        "name": "Development User",
+        "profile_picture": "https://ui-avatars.com/api/?name=Dev+User&background=0D8ABC&color=fff",
+        "created_at": datetime.now().isoformat(),
+        "is_admin": True
+    }
+    
+    # Create a fake token (in production this would be a proper JWT)
+    token = "dev-token-123456789"
+    
+    return {
+        "user": fake_user,
+        "access_token": token,
+        "token_type": "bearer"
+    }
+
 @app.post("/api/auth/register", response_model=TokenResponse)
 async def register_user(user_data: UserCreate):
     """Register a new user."""

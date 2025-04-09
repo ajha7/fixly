@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SocialLoginButtons from './SocialLoginButtons';
 import MagicLinkForm from './MagicLinkForm';
+import AutoLogin from './AutoLogin';
 import { Box, Container, Typography, Paper, Divider, useTheme } from '@mui/material';
 
 interface AuthToken {
@@ -99,6 +100,12 @@ const AuthPage: React.FC = () => {
             isLoading={isLoading}
           />
         </Box>
+        
+        {process.env.NODE_ENV !== 'production' && (
+          <Box sx={{ width: '100%', mt: 3 }}>
+            <AutoLogin />
+          </Box>
+        )}
       </Paper>
     </Container>
   );

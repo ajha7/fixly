@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 // API base URL
 const API_URL = import.meta.env.VITE_API_URL;
@@ -126,6 +127,23 @@ export const authService = {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
     // Redirect to home page or login page if needed
+  },
+  
+  // Auto-login for development purposes
+  async autoLogin(): Promise<any> {
+    try {
+      const response = await api.post('/api/auth/auto-login');
+      
+      if (response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
+        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error during auto-login:', error);
+      throw error;
+    }
   }
 };
 
